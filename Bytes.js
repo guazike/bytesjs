@@ -189,6 +189,8 @@
         this.clear = function ()
         {
             bytes = '';
+            position = 0;
+            bitpos = 0;
         }
         
         this.toString = function ()
@@ -306,6 +308,25 @@
         {
             return read(this.readUnsignedShort());
         }
+        
+        this.readCString = function ()
+        {
+            var strOffset = position;
+            for(var i=position; i<bytes.length; i++){
+            		if(bytes[i]==0){
+					break;
+				}else{
+					strOffset++;
+				}
+            }
+            
+            var result = bytes.slice(position, strOffset-1);
+            //if (endian === Bytes.BIG_ENDIAN)
+            //    result = result.split('').reverse().join('');
+            
+            position = strOffset-1;
+            return result;
+        }
          
         this.readUTFBytes = function (length)
         {
@@ -345,13 +366,16 @@
             return this;
         }
          
-        this.writeBytes = function (bytes, offset, length)
+        this.writeBytes = function (appendBytes, offset, length)
         {
-            if (bytes && bytes instanceof Bytes)
+            if (appendBytes && appendBytes instanceof Bytes)
             {
                 offset = offset === undefined ? 0 : offset|0;
-                length = length === undefined ? bytes.length() : length|0;
-                write(bytes.toString().slice(offset, offset + length))
+                length = length === undefined ? appendBytes.length() : length|0;
+                var value = appendBytes.toString().slice(offset, offset + length);
+                bytes = bytes.slice(0, position) + value + bytes.slice(position);
+				position += value.length;
+                
             }
             return this;
         }
@@ -482,12 +506,32 @@
             this.writeUnsignedShort(value.length);
             write(value);
         }
+        
+        //add by guazike
+        this.writeCString = function (value)
+        {
+            value = value === undefined ? '' : value + '';
+            if (endian === Bytes.BIG_ENDIAN){
+				write(value);
+				write('\0');	
+            }else{
+				write('\0');
+				write(value);
+            }
+        }
          
         this.writeUTFBytes = function (value)
         {
             value = value === undefined ? '' : value + '';
             write(value);
         }
+        
+        this.toASCII = function () {
+        		position = 0;
+			for (let i = 0; i < this.length(); i++) {
+				console.log(this.readByte())
+			}
+		}
     }
     
     Bytes.BIG_ENDIAN = 'big_endian';
