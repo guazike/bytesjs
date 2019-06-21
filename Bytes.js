@@ -366,7 +366,7 @@
             return this;
         }
          
-        this.writeBytes = function (appendBytes, offset, length)
+        this.writeBytes = function (appendBytes, offset, length, keepPos)
         {
             if (appendBytes && appendBytes instanceof Bytes)
             {
@@ -374,8 +374,29 @@
                 length = length === undefined ? appendBytes.length() : length|0;
                 var value = appendBytes.toString().slice(offset, offset + length);
                 bytes = bytes.slice(0, position) + value + bytes.slice(position);
-				position += value.length;
-                
+                if(!keepPos){
+                		position += value.length;
+                }
+            }
+            return this;
+        }
+        
+        this.writeUint8Array = function (appendBytes, offset, length, keepPos)
+        {
+            if (appendBytes)
+            {
+                offset = offset === undefined ? 0 : offset|0;
+                length = length === undefined ? appendBytes.length : length|0;
+                var byte1 = bytes.slice(0, position);
+                var byte2 = bytes.slice(position);
+                var end = offset+length;
+                for(var i=offset; i<end; i++){
+                		byte1 = byte1 + String.fromCharCode(appendBytes[i]);
+                }
+                bytes = byte1 + byte2;
+                if(!keepPos){
+                		position += value.length;
+                }
             }
             return this;
         }

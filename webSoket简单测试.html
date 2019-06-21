@@ -1,0 +1,88 @@
+<html>
+<head>
+<script src="Bytes.js"></script>
+</head>
+<body>
+<script>
+  
+  //协议pid
+  var pid_Login = 10001;
+  var pid_HeartBeat = 10002;
+  var pid_SendTo = 10007;
+  var receiveData;
+  var receiveArray;
+  var receiveBuffer = new Bytes();
+  
+  
+  var  wsServer;
+  var  websocket;
+  if ("WebSocket" in window) {
+     //var WS_URL = 'ws://120.79.0.197:6061/khala-im'; 
+     var WS_URL = 'ws://0.0.0.0:6061/khala-im'; 
+     websocket = new WebSocket(WS_URL); 
+     websocket.binaryType = 'arraybuffer';
+     websocket.onopen = function (evt) { onOpen(evt) }; 
+     websocket.onclose = function (evt) { onClose(evt) }; 
+     websocket.onmessage = function (evt) { onMessage(evt) }; 
+     websocket.onerror = function (evt) { onError(evt) }; 
+  }else{
+    console.log("WebSocket is not supported by your Browser!");
+  }
+
+ function onOpen(evt) { 
+  console.log("Connected to WebSocket server."); 
+   login();
+ } 
+ function onClose(evt) { 
+   console.log("Disconnected"); 
+ } 
+ function onMessage(evt) {
+   receiveData = evt.data;
+   console.log('Retrieved data len from server: ' + receiveData); 
+   receiveArray = new Uint8Array(receiveData);
+   receiveBuffer.writeUint8Array(receiveArray, 0, receiveArray.length, true);
+ } 
+ function onError(evt) { 
+   console.log('Error occured: ' + evt.data); 
+ }
+
+//生成报文头
+function makeHead(pid, bodyLen){
+  //报文头=pid(4bytes)+check(8bytes)+bodyLen(4bytes)
+  var head = new Bytes();
+  //w 将pid check bodyLen分别写入head
+  head.writeInt(pid);
+  head.writeUTF("123456");
+  head.writeInt(bodyLen);
+  return head;
+}
+
+//解析消息头
+function readHead(){
+  var head = {};
+  head.pid = receiveBuffer.readInt();
+  head.check = receiveBuffer.readDouble();
+  head.msgBodyLen = receiveBuffer.readInt();
+  console.log("head:", head);
+  return head;
+}
+
+//用户登录
+function login(){
+  var msgBody = new Bytes();
+  //w 将uid和token以及重登标识写入msgBody
+  msgBody.writeCString("ab");
+  msgBody.writeCString("c");
+  msgBody.writeByte(0);
+  //console.log("msgBody:",msgBody.toASCII());
+  var head = makeHead(pid_Login, msgBody.length());
+  //console.log("head:",head.toASCII());
+  var sendData = head.writeBytes(msgBody);//w 形成完整报文
+  //console.log("sendData:",sendData.toASCII());
+  websocket.send(sendData.toString());
+}
+
+</script>
+
+</body>
+</html>
