@@ -57,7 +57,7 @@
         
         var write = function (value)
         {
-            if (endian === Bytes.LITTLE_ENDIAN)
+            if (endian === Bytes.BIG_ENDIAN)
                 value = value.split('').reverse().join('');
             bytes = bytes.slice(0, position) + value + bytes.slice(position);
             position += value.length;
@@ -70,7 +70,7 @@
             
             position += value;
             var result = bytes.slice(position - value, position);
-            if (endian === Bytes.LITTLE_ENDIAN)
+            if (endian === Bytes.BIG_ENDIAN)
                 result = result.split('').reverse().join('');
             return result;
         }
@@ -322,8 +322,9 @@
             }
             var strEnd = exist0?strOffset-1:strOffset;
             var result = bytes.slice(position, strEnd);
-            
             position = strOffset;
+            if (endian === Bytes.BIG_ENDIAN)
+                result = result.split('').reverse().join('');
             return result;
         }
          
