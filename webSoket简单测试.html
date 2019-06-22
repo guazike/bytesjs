@@ -39,8 +39,7 @@
  function onMessage(evt) {
    receiveData = evt.data;
    console.log('Retrieved data len from server: ' + receiveData); 
-   receiveArray = new Uint8Array(receiveData);
-   receiveBuffer.writeUint8Array(receiveArray, 0, receiveArray.length, true);
+   receiveBuffer.writeBlobData(evt.data, 0, evt.data.length, true);
  } 
  function onError(evt) { 
    console.log('Error occured: ' + evt.data); 
@@ -63,9 +62,9 @@ function readHead(){
   head.pid = receiveBuffer.readInt();
   head.check = receiveBuffer.readDouble();
   head.msgBodyLen = receiveBuffer.readInt();
-  console.log("head:", head);
   return head;
 }
+receiveBuffer
 
 //用户登录
 function login(){

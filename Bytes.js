@@ -57,7 +57,7 @@
         
         var write = function (value)
         {
-            if (endian === Bytes.BIG_ENDIAN)
+            if (endian === Bytes.LITTLE_ENDIAN)
                 value = value.split('').reverse().join('');
             bytes = bytes.slice(0, position) + value + bytes.slice(position);
             position += value.length;
@@ -70,7 +70,7 @@
             
             position += value;
             var result = bytes.slice(position - value, position);
-            if (endian === Bytes.BIG_ENDIAN)
+            if (endian === Bytes.LITTLE_ENDIAN)
                 result = result.split('').reverse().join('');
             return result;
         }
@@ -312,19 +312,18 @@
         this.readCString = function ()
         {
             var strOffset = position;
+            var exist0 = false;
             for(var i=position; i<bytes.length; i++){
-            		if(bytes[i]==0){
+            		strOffset++;
+            		if(bytes[i].charCodeAt(0)==0){
+					exist0 = true;
 					break;
-				}else{
-					strOffset++;
 				}
             }
+            var strEnd = exist0?strOffset-1:strOffset;
+            var result = bytes.slice(position, strEnd);
             
-            var result = bytes.slice(position, strOffset-1);
-            //if (endian === Bytes.BIG_ENDIAN)
-            //    result = result.split('').reverse().join('');
-            
-            position = strOffset-1;
+            position = strOffset;
             return result;
         }
          
@@ -381,10 +380,11 @@
             return this;
         }
         
-        this.writeUint8Array = function (appendBytes, offset, length, keepPos)
+        this.writeBlobData = function (blobData, offset, length, keepPos)
         {
-            if (appendBytes)
+            if (blobData)
             {
+            		appendBytes = new Uint8Array(blobData);
                 offset = offset === undefined ? 0 : offset|0;
                 length = length === undefined ? appendBytes.length : length|0;
                 var byte1 = bytes.slice(0, position);
@@ -400,6 +400,8 @@
             }
             return this;
         }
+        
+        
          
         this.writeSingle = function (value)
         {
@@ -532,13 +534,8 @@
         this.writeCString = function (value)
         {
             value = value === undefined ? '' : value + '';
-            if (endian === Bytes.BIG_ENDIAN){
-				write(value);
-				write('\0');	
-            }else{
-				write('\0');
-				write(value);
-            }
+            write(value);
+			write('\0');	
         }
          
         this.writeUTFBytes = function (value)
