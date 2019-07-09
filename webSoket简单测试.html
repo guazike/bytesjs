@@ -30,17 +30,57 @@
   }
 
  function onOpen(evt) { 
+  ping();
   console.log("Connected to WebSocket server."); 
-   login();
  } 
  function onClose(evt) { 
    console.log("Disconnected"); 
  } 
  function onMessage(evt) {
    receiveData = evt.data;
-   console.log('Retrieved data len from server: ' + receiveData); 
+   //console.log('Retrieved data len from server: ' + evt.data); 
    receiveBuffer.writeBlobData(evt.data, 0, evt.data.length, true);
+    var head = readHead();
+    if(head.pid!=20002){//心跳响应
+      console.log("read head");
+      console.log("pid:", head.pid);
+      console.log("msgBodyLen:", head.msgBodyLen);
+    }
+      
+    if(head.pid==20001){
+      console.log("登录反馈：msg:", receiveBuffer.readByte(), receiveBuffer.readCString());
+    }else if(head.pid==20007){
+      console.log("发送聊天消息完成:", receiveBuffer.readByte(), receiveBuffer.readCString());
+    }else if(head.pid==30007){
+      console.log("收到聊天消息: time:", receiveBuffer.readLong()," from:",receiveBuffer.readCString(), " msg:",receiveBuffer.readCString());
+     }
+    
+    
+    
+    
  } 
+
+//发私聊
+function sendTo(receiver, msg){
+  var msgBody = new Bytes();
+      //w 将uid和token以及重登标识写入msgBody
+      msgBody.writeInt(1);
+      msgBody.writeCString(receiver);
+      msgBody.writeCString(msg);
+      console.log("msgBody len:", msgBody.length());
+      var head = makeHead(10007,msgBody.length());
+      var sendData = head.writeBytes(msgBody)
+      websocket.send(sendData.toString());
+}
+
+ function ping(){
+  setInterval(()=>{
+    var sendData = makeHead(10002,0)
+    websocket.send(sendData.toString());
+    //console.log("ping...");
+  }, 5000)
+}
+
  function onError(evt) { 
    console.log('Error occured: ' + evt.data); 
  }
@@ -64,14 +104,14 @@ function readHead(){
   head.msgBodyLen = receiveBuffer.readInt();
   return head;
 }
-receiveBuffer
+
 
 //用户登录
-function login(){
+function login(userName){
   var msgBody = new Bytes();
   //w 将uid和token以及重登标识写入msgBody
-  msgBody.writeCString("ab");
-  msgBody.writeCString("c");
+  msgBody.writeCString(userName);
+  msgBody.writeCString("key");
   msgBody.writeByte(0);
   //console.log("msgBody:",msgBody.toASCII());
   var head = makeHead(pid_Login, msgBody.length());

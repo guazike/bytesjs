@@ -40,6 +40,10 @@
     var DOUBLE_INFINITY_POS = CHAR_000 + CHAR_000 + CHAR_000 + CHAR_000 + CHAR_000 + CHAR_000 + CHAR_240 + CHAR_127;
     var DOUBLE_INFINITY_NEG = CHAR_000 + CHAR_000 + CHAR_000 + CHAR_000 + CHAR_000 + CHAR_000 + CHAR_240 + CHAR_255;
     
+    var BYTE_AND_FLAG = [255,65535,16777215,4294967295];
+    
+    
+    
     var Bytes = function (bytes)
     {
         bytes = bytes === undefined || typeof bytes !== 'string' ? '' : bytes;
@@ -57,8 +61,8 @@
         
         var write = function (value)
         {
-            if (endian === Bytes.BIG_ENDIAN)
-                value = value.split('').reverse().join('');
+//            if (endian === Bytes.BIG_ENDIAN)
+//                value = value.split('').reverse().join('');
             bytes = bytes.slice(0, position) + value + bytes.slice(position);
             position += value.length;
         }
@@ -70,33 +74,55 @@
             
             position += value;
             var result = bytes.slice(position - value, position);
-            if (endian === Bytes.BIG_ENDIAN)
-                result = result.split('').reverse().join('');
+//            if (endian === Bytes.BIG_ENDIAN)
+//                result = result.split('').reverse().join('');
             return result;
         }
         
-        var readInteger = function (length, signed)
-        {
-            var msb = Math.pow(2, length * 8);
-            var string = read(length);
-            var result = 0;
-            for (var i = 0; i < length; i++)
-                result += string.charCodeAt(i) << (i * 8);
+//       var readInteger = function (length, signed)
+//       {
+//           var msb = Math.pow(2, length * 8);
+//           var string = read(length);
+//           var result = 0;
+//           for (var i = 0; i < length; i++)
+//               result += string.charCodeAt(i) << (i * 8);
            
-            result &= ~0;
-            result = signed && result >= msb * 0.5 ? result - msb : result;
+//           result &= ~0;
+//           result = signed && result >= msb * 0.5 ? result - msb : result;
             
-            return result;
-        }
+//           return result;
+//		}
+		
+		var readInteger = function (length, signed)
+       {
+           var msb = Math.pow(2, length * 8);
+           var string = read(length);
+           var result = 0;
+           for (var i = 0; i < length; i++)
+               result += string.charCodeAt(i) << ((length-i-1) * 8);
+           
+           result &= ~0;
+           result = signed && result >= msb * 0.5 ? result - msb : result;
+            
+           return result;
+		}
         
-        var writeInteger = function (length, value)
-        {
-            value = value === undefined ? 0 : value & (~0 >>> (32 - length * 8));
-            var str = '';
-            for (var i = 0; i < length; i++)
-                str += fromCharCode((value >> (i * 8)) & 0xff);
-            write(str);
-        }
+//       var writeInteger = function (length, value)
+//       {
+//          value = value === undefined ? 0 : value & (~0 >>> (32 - length * 8));
+//          var str = '';
+//          for (var i = 0; i <length; i++)
+//              str += fromCharCode((value >> (i * 8)) & 0xff);
+//          write(str);
+//       }
+    		var writeInteger = function (length, value)
+       {
+          value = value === undefined ? 0 : value & (~0 >>> (32 - length * 8));
+          var str = '';
+          for (var i = 0; i <length; i++)
+              str = fromCharCode((value >> (i * 8)) & 0xff) + str;
+          write(str);
+       }
         
         this.endian = function (value)
         {
@@ -273,6 +299,11 @@
                 return sgn * Math.pow(2, exp) * (1 + fra / Math.pow(2, 20) + rest / Math.pow(2, 52));
             }
         }
+        
+        this.readLong = function ()
+        {
+            return readInteger(8, false);
+        }
          
         this.readByte = function ()
         {
@@ -323,8 +354,8 @@
             var strEnd = exist0?strOffset-1:strOffset;
             var result = bytes.slice(position, strEnd);
             position = strOffset;
-            if (endian === Bytes.BIG_ENDIAN)
-                result = result.split('').reverse().join('');
+//            if (endian === Bytes.BIG_ENDIAN)
+//                result = result.split('').reverse().join('');
             return result;
         }
          
@@ -521,6 +552,13 @@
         this.writeUnsignedInt = function (value)
         {
             writeInteger(4, value);
+            return this;
+        }
+        
+        this.writeLong = 
+        this.writeUnsignedLong = function (value)
+        {
+            writeInteger(8, value);
             return this;
         }
          
